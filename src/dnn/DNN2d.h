@@ -6,6 +6,7 @@
 #define NN1_DNN2D_H
 
 #include "../chain_action/predict_state.h"
+#include <rcsc/player/player_agent.h>
 #include "DeepNueralNetwork.h"
 #include <cmath>
 
@@ -67,7 +68,7 @@ public:
         return ReadFromTensorFlow(file);
     }
 
-    MatrixXd make_input(const PredictState &state) {
+    MatrixXd make_input(const rcsc::WorldModel &state) {
         vector<double> x;
         const rcsc::AbstractPlayerObject *kicker = find_kicker(state);
         cout << "Kicker Found" << endl;

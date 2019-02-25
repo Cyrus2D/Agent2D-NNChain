@@ -67,45 +67,45 @@ std::vector<std::pair<Vector2D, double> > ActionChainGraph::S_evaluated_points;
 
 namespace {
 
-    const double HEAT_COLOR_SCALE = 128.0;
-    const double HEAT_COLOR_PERIOD = 2.0 * M_PI;
+const double HEAT_COLOR_SCALE = 128.0;
+const double HEAT_COLOR_PERIOD = 2.0 * M_PI;
 
-    inline
-    int
-    heat_color(const double &x) {
-        //return std::floor( ( std::cos( x ) + 1.0 ) * HEAT_COLOR_SCALE );
-        return static_cast< int >( std::floor((std::cos(x) + 1.0) * HEAT_COLOR_SCALE));
-    }
+inline
+int
+heat_color(const double &x) {
+    //return std::floor( ( std::cos( x ) + 1.0 ) * HEAT_COLOR_SCALE );
+    return static_cast< int >( std::floor((std::cos(x) + 1.0) * HEAT_COLOR_SCALE));
+}
 
-    inline
-    void
-    debug_paint_evaluate_color(const Vector2D &pos,
-                               const double &value,
-                               const double &min,
-                               const double &max) {
-        double position = (value - min) / (max - min);
-        if (position < 0.0) position = -position;
-        if (position > 2.0) position = std::fmod(position, 2.0);
-        if (position > 1.0) position = 1.0 - (position - 1.0);
+inline
+void
+debug_paint_evaluate_color(const Vector2D &pos,
+                           const double &value,
+                           const double &min,
+                           const double &max) {
+    double position = (value - min) / (max - min);
+    if (position < 0.0) position = -position;
+    if (position > 2.0) position = std::fmod(position, 2.0);
+    if (position > 1.0) position = 1.0 - (position - 1.0);
 
-        double shift = 0.5 * position + 1.7 * (1.0 - position);
-        double x = shift + position * HEAT_COLOR_PERIOD;
+    double shift = 0.5 * position + 1.7 * (1.0 - position);
+    double x = shift + position * HEAT_COLOR_PERIOD;
 
-        int r = heat_color(x);
-        int g = heat_color(x + M_PI * 0.5);
-        int b = heat_color(x + M_PI);
+    int r = heat_color(x);
+    int g = heat_color(x + M_PI * 0.5);
+    int b = heat_color(x + M_PI);
 
-        // dlog.addText( Logger::ACTION_CHAIN,
-        //               "(paint) (%.2f %.2f) eval=%f -> %d %d %d",
-        //               pos.x, pos.y, value, r, g, b );
-        char str[16];
-        snprintf(str, 16, "%lf", value);
-        dlog.addMessage(Logger::ACTION_CHAIN,
-                        pos, str, "#ffffff");
-        dlog.addRect(Logger::ACTION_CHAIN,
-                     pos.x - 0.1, pos.y - 0.1, 0.2, 0.2,
-                     r, g, b, true);
-    }
+    // dlog.addText( Logger::ACTION_CHAIN,
+    //               "(paint) (%.2f %.2f) eval=%f -> %d %d %d",
+    //               pos.x, pos.y, value, r, g, b );
+    char str[16];
+    snprintf(str, 16, "%lf", value);
+    dlog.addMessage(Logger::ACTION_CHAIN,
+                    pos, str, "#ffffff");
+    dlog.addRect(Logger::ACTION_CHAIN,
+                 pos.x - 0.1, pos.y - 0.1, 0.2, 0.2,
+                 r, g, b, true);
+}
 
 }
 
@@ -118,14 +118,14 @@ ActionChainGraph::ActionChainGraph(const FieldEvaluator::ConstPtr &evaluator,
                                    const ActionGenerator::ConstPtr &generator,
                                    unsigned long max_chain_length,
                                    long max_evaluate_limit)
-        : M_evaluator(evaluator),
-          M_action_generator(generator),
-          M_chain_count(0),
-          M_best_chain_count(0),
-          M_max_chain_length(max_chain_length),
-          M_max_evaluate_limit(max_evaluate_limit),
-          M_result(),
-          M_best_evaluation(-std::numeric_limits<double>::max()) {
+    : M_evaluator(evaluator),
+      M_action_generator(generator),
+      M_chain_count(0),
+      M_best_chain_count(0),
+      M_max_chain_length(max_chain_length),
+      M_max_evaluate_limit(max_evaluate_limit),
+      M_result(),
+      M_best_evaluation(-std::numeric_limits<double>::max()) {
 #ifdef DEBUG_PAINT_EVALUATED_POINTS
     S_evaluated_points.clear();
     S_evaluated_points.reserve( DEFAULT_MAX_EVALUATE_LIMIT + 1 );
@@ -265,7 +265,7 @@ ActionChainGraph::doSearch(const WorldModel &wm,
     // check evaluation limit
     //
     if (max_evaluate_limit != -1
-        && *n_evaluated >= static_cast< unsigned int >( max_evaluate_limit )) {
+            && *n_evaluated >= static_cast< unsigned int >( max_evaluate_limit )) {
         dlog.addText(Logger::ACTION_CHAIN,
                      "cut by max evaluate limit %d", *n_evaluated);
 #if 0
@@ -303,7 +303,7 @@ ActionChainGraph::doSearch(const WorldModel &wm,
     //
     std::vector<ActionStatePair> candidates;
     if (path.empty()
-        || !(*(path.rbegin())).action().isFinalAction()) {
+            || !(*(path.rbegin())).action().isFinalAction()) {
         M_action_generator->generate(&candidates, state, wm, path);
     }
 
@@ -368,9 +368,9 @@ ActionChainGraph::doSearch(const WorldModel &wm,
 class ChainComparator {
 public:
     bool operator()(const std::pair<std::vector<ActionStatePair>,
-            double> &a,
+                    double> &a,
                     const std::pair<std::vector<ActionStatePair>,
-                            double> &b) {
+                    double> &b) {
         return (a.second < b.second);
     }
 };
@@ -418,12 +418,53 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
     M_best_evaluation = current_evaluation;
 
     queue.push(std::pair<std::vector<ActionStatePair>, double>
-                       (empty_path, current_evaluation));
+               (empty_path, current_evaluation));
 
 
     //
     // main loop
     //
+
+    //NeuralNetwork unum
+    static DNN2d dnn("weights.dnn");
+    int nn_unum;
+    if (OffenseConfig::i(wm.teamName())->dnn) {
+        cout << "###DNN WORKS" << endl;
+                cout << "**************************" << endl
+                     << "time: " << wm.time().cycle() << endl;
+        cout << "Calcing" << endl;
+        dnn.Calculate(dnn.make_input(wm));
+                cout << "Calcing Done" << endl;
+        cout << "dnn.Output: " << dnn.mOutput << endl;
+
+        nn_unum = dnn.max_output() + 1;
+        //        if (nn_unum == (*it).state().ballHolderUnum()) {
+        //            ev += 100;
+        //            cout << "CHNN Matched" << endl;
+        //        }
+    }
+    //NeuralNetwork vel
+    //            if (OffenseConfig::i(wm.teamName())->vel) {
+    //                cout << "###DNN vel Works" << endl;
+    //                static DNN2d dnnvel("weights_vel.dnn");
+    //                cout << "**************************" << endl
+    //                     << "time: " << (*it).state().currentTime().cycle() << endl;
+    //                cout << "Calcing" << endl;
+    //                dnnvel.Calculate(dnnvel.make_input((*it).state()));
+    //                cout << "Calcing Done" << endl;
+    //                cout << "dnnvel.Output: " << dnnvel.mOutput << endl;
+    //
+    //                Polar vel_p(dnnvel.mOutput(1, 0), dnnvel.mOutput(0, 0));
+    //                Polar pass_dir = make_polar((*it).state().ballHolder()->pos(), (*it).action().targetPoint());
+    //                double speed_diff = abs(vel_p.r - (*it).action().firstBallSpeed());
+    //                double angle_diff = abs(vel_p.teta - pass_dir.teta);
+    //                cout << "speed_diff: " << speed_diff << endl;
+    //                cout << "angle_diff: " << angle_diff << endl;
+    //
+    //                ev += 10 - angle_diff;
+    //                ev += 10 - speed_diff;
+    //            }
+
     for (;;) {
         //
         // pick up most valuable action chain
@@ -452,8 +493,8 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
         //
         std::vector<ActionStatePair> candidates;
         if (series.size() < M_max_chain_length
-            && (series.empty()
-                || !(*(series.rbegin())).action().isFinalAction())) {
+                && (series.empty()
+                    || !(*(series.rbegin())).action().isFinalAction())) {
             M_action_generator->generate(&candidates, *state, wm, series);
 #ifdef ACTION_CHAIN_DEBUG
             dlog.addText( Logger::ACTION_CHAIN,
@@ -463,7 +504,6 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
                           candidates.size() );
 #endif
         }
-
 
         //
         // evaluate each candidate and push to priority queue
@@ -478,45 +518,13 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
             double ev = (*M_evaluator)((*it).state(), candidate_series);
             ++(*n_evaluated);
 
-            //NeuralNetwork unum
-            if (OffenseConfig::i(wm.teamName())->dnn) {
-                cout << "###DNN WORKS" << endl;
-                static DNN2d dnn("weights.dnn");
-                cout << "**************************" << endl
-                     << "time: " << (*it).state().currentTime().cycle() << endl;
-                cout << "Calcing" << endl;
-                dnn.Calculate(dnn.make_input((*it).state()));
-                cout << "Calcing Done" << endl;
-                cout << "dnn.Output: " << dnn.mOutput << endl;
-
-                int nn_unum = dnn.max_output() + 1;
+            if(OffenseConfig::i()->dnn){
                 if (nn_unum == (*it).state().ballHolderUnum()) {
                     ev += 100;
                     cout << "CHNN Matched" << endl;
                 }
             }
 
-            //NeuralNetwork vel
-            if (OffenseConfig::i(wm.teamName())->vel) {
-                cout << "###DNN vel Works" << endl;
-                static DNN2d dnnvel("weights_vel.dnn");
-                cout << "**************************" << endl
-                     << "time: " << (*it).state().currentTime().cycle() << endl;
-                cout << "Calcing" << endl;
-                dnnvel.Calculate(dnnvel.make_input((*it).state()));
-                cout << "Calcing Done" << endl;
-                cout << "dnnvel.Output: " << dnnvel.mOutput << endl;
-
-                Polar vel_p(dnnvel.mOutput(1, 0), dnnvel.mOutput(0, 0));
-                Polar pass_dir = make_polar((*it).state().ballHolder()->pos(), (*it).action().targetPoint());
-                double speed_diff = abs(vel_p.r - (*it).action().firstBallSpeed());
-                double angle_diff = abs(vel_p.teta - pass_dir.teta);
-                cout << "speed_diff: " << speed_diff << endl;
-                cout << "angle_diff: " << angle_diff << endl;
-
-                ev += 10 - angle_diff;
-                ev += 10 - speed_diff;
-            }
 
 #ifdef ACTION_CHAIN_DEBUG
             write_chain_log( wm, M_chain_count, candidate_series, ev );
@@ -537,7 +545,7 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
             }
 
             if (M_max_evaluate_limit != -1
-                && *n_evaluated >= static_cast< unsigned int >( M_max_evaluate_limit )) {
+                    && *n_evaluated >= static_cast< unsigned int >( M_max_evaluate_limit )) {
 #ifdef ACTION_CHAIN_DEBUG
                 dlog.addText( Logger::ACTION_CHAIN,
                               "***** over max evaluation count *****" );
@@ -546,7 +554,7 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
             }
 
             queue.push(std::pair<std::vector<ActionStatePair>, double>
-                               (candidate_series, ev));
+                       (candidate_series, ev));
         }
     }
 }
@@ -638,60 +646,60 @@ ActionChainGraph::debug_send_chain(PlayerAgent *agent,
 
 
         switch (action.category()) {
-            case CooperativeAction::Hold: {
-                action_string = "hold";
-                break;
-            }
+        case CooperativeAction::Hold: {
+            action_string = "hold";
+            break;
+        }
 
-            case CooperativeAction::Dribble: {
-                action_string = "dribble";
+        case CooperativeAction::Dribble: {
+            action_string = "dribble";
 
-                agent->debugClient().addLine(s0->ball().pos(), s1->ball().pos());
-                break;
-            }
+            agent->debugClient().addLine(s0->ball().pos(), s1->ball().pos());
+            break;
+        }
 
 
-            case CooperativeAction::Pass: {
-                action_string = "pass";
+        case CooperativeAction::Pass: {
+            action_string = "pass";
 
-                std::stringstream buf;
-                buf << action.targetPlayerUnum();
-                target_string = buf.str();
+            std::stringstream buf;
+            buf << action.targetPlayerUnum();
+            target_string = buf.str();
 
-                if (i == 0
+            if (i == 0
                     && s0->ballHolderUnum() == agent->world().self().unum()) {
-                    agent->debugClient().setTarget(action.targetPlayerUnum());
+                agent->debugClient().setTarget(action.targetPlayerUnum());
 
-                    if (s0->ourPlayer(action.targetPlayerUnum())->pos().dist(s1->ball().pos())
+                if (s0->ourPlayer(action.targetPlayerUnum())->pos().dist(s1->ball().pos())
                         > DIRECT_PASS_DIST) {
-                        agent->debugClient().addLine(s0->ball().pos(), s1->ball().pos());
-                    }
-                } else {
                     agent->debugClient().addLine(s0->ball().pos(), s1->ball().pos());
                 }
-
-                break;
+            } else {
+                agent->debugClient().addLine(s0->ball().pos(), s1->ball().pos());
             }
 
-            case CooperativeAction::Shoot: {
-                action_string = "shoot";
+            break;
+        }
 
-                agent->debugClient().addLine(s0->ball().pos(),
-                                             Vector2D(ServerParam::i().pitchHalfLength(),
-                                                      0.0));
+        case CooperativeAction::Shoot: {
+            action_string = "shoot";
 
-                break;
-            }
+            agent->debugClient().addLine(s0->ball().pos(),
+                                         Vector2D(ServerParam::i().pitchHalfLength(),
+                                                  0.0));
 
-            case CooperativeAction::Move: {
-                action_string = "move";
-                break;
-            }
-            default: {
-                action_string = "?";
+            break;
+        }
 
-                break;
-            }
+        case CooperativeAction::Move: {
+            action_string = "move";
+            break;
+        }
+        default: {
+            action_string = "?";
+
+            break;
+        }
         }
 
         if (action.description()) {
@@ -759,55 +767,55 @@ ActionChainGraph::write_chain_log(const std::string &pre_log_message,
 
 
         switch (a.category()) {
-            case CooperativeAction::Hold: {
-                dlog.addText(Logger::ACTION_CHAIN,
-                             "__ %d: hold (%s) t=%d",
-                             i, a.description(), s1->spendTime());
-                break;
-            }
+        case CooperativeAction::Hold: {
+            dlog.addText(Logger::ACTION_CHAIN,
+                         "__ %d: hold (%s) t=%d",
+                         i, a.description(), s1->spendTime());
+            break;
+        }
 
-            case CooperativeAction::Dribble: {
-                dlog.addText(Logger::ACTION_CHAIN,
-                             "__ %d: dribble (%s[%d]) t=%d unum=%d target=(%.2f %.2f)",
-                             i, a.description(), a.index(), s1->spendTime(),
-                             s0->ballHolderUnum(),
-                             a.targetPoint().x, a.targetPoint().y);
-                break;
-            }
+        case CooperativeAction::Dribble: {
+            dlog.addText(Logger::ACTION_CHAIN,
+                         "__ %d: dribble (%s[%d]) t=%d unum=%d target=(%.2f %.2f)",
+                         i, a.description(), a.index(), s1->spendTime(),
+                         s0->ballHolderUnum(),
+                         a.targetPoint().x, a.targetPoint().y);
+            break;
+        }
 
-            case CooperativeAction::Pass: {
-                dlog.addText(Logger::ACTION_CHAIN,
-                             "__ %d: pass (%s[%d]) t=%d from[%d](%.2f %.2f)-to[%d](%.2f %.2f)",
-                             i, a.description(), a.index(), s1->spendTime(),
-                             s0->ballHolderUnum(),
-                             s0->ball().pos().x, s0->ball().pos().y,
-                             s1->ballHolderUnum(),
-                             a.targetPoint().x, a.targetPoint().y);
-                break;
-            }
+        case CooperativeAction::Pass: {
+            dlog.addText(Logger::ACTION_CHAIN,
+                         "__ %d: pass (%s[%d]) t=%d from[%d](%.2f %.2f)-to[%d](%.2f %.2f)",
+                         i, a.description(), a.index(), s1->spendTime(),
+                         s0->ballHolderUnum(),
+                         s0->ball().pos().x, s0->ball().pos().y,
+                         s1->ballHolderUnum(),
+                         a.targetPoint().x, a.targetPoint().y);
+            break;
+        }
 
-            case CooperativeAction::Shoot: {
-                dlog.addText(Logger::ACTION_CHAIN,
-                             "__ %d: shoot (%s) t=%d unum=%d",
-                             i, a.description(), s1->spendTime(),
-                             s0->ballHolderUnum());
+        case CooperativeAction::Shoot: {
+            dlog.addText(Logger::ACTION_CHAIN,
+                         "__ %d: shoot (%s) t=%d unum=%d",
+                         i, a.description(), s1->spendTime(),
+                         s0->ballHolderUnum());
 
-                break;
-            }
+            break;
+        }
 
-            case CooperativeAction::Move: {
-                dlog.addText(Logger::ACTION_CHAIN,
-                             "__ %d: move (%s)",
-                             i, a.description(), s1->spendTime());
-                break;
-            }
+        case CooperativeAction::Move: {
+            dlog.addText(Logger::ACTION_CHAIN,
+                         "__ %d: move (%s)",
+                         i, a.description(), s1->spendTime());
+            break;
+        }
 
-            default: {
-                dlog.addText(Logger::ACTION_CHAIN,
-                             "__ %d: ???? (%s)",
-                             i, a.description(), s1->spendTime());
-                break;
-            }
+        default: {
+            dlog.addText(Logger::ACTION_CHAIN,
+                         "__ %d: ???? (%s)",
+                         i, a.description(), s1->spendTime());
+            break;
+        }
         }
     }
 }
