@@ -430,40 +430,40 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
     int nn_unum;
     if (OffenseConfig::i(wm.teamName())->dnn) {
         cout << "###DNN WORKS" << endl;
-                cout << "**************************" << endl
-                     << "time: " << wm.time().cycle() << endl;
+        cout << "**************************" << endl
+             << "time: " << wm.time().cycle() << endl;
         cout << "Calcing" << endl;
         dnn.Calculate(dnn.make_input(wm));
-                cout << "Calcing Done" << endl;
+        cout << "Calcing Done" << endl;
         cout << "dnn.Output: " << dnn.mOutput << endl;
 
+        for (int i = 0; i < dnn.mOutput.rows(); i++) {
+            dlog.addText(Logger::KICK,"p(%d): %.2f", i, dnn.mOutput(i, 0));
+        }
         nn_unum = dnn.max_output() + 1;
-        //        if (nn_unum == (*it).state().ballHolderUnum()) {
-        //            ev += 100;
-        //            cout << "CHNN Matched" << endl;
-        //        }
+        const AbstractPlayerObject* tm = wm.ourPlayer(nn_unum);
+        dlog.addLine(Logger::KICK, wm.self().pos(), tm->pos(), 0, 0, 0);
+        dlog.addCircle(Logger::KICK, tm->pos(), 1.5, 0,0,0);
+        dlog.addText(Logger::KICK, "Point To nn_unum: %d", nn_unum);
+//        dlog.addLine();
+
     }
     //NeuralNetwork vel
-    //            if (OffenseConfig::i(wm.teamName())->vel) {
-    //                cout << "###DNN vel Works" << endl;
-    //                static DNN2d dnnvel("weights_vel.dnn");
-    //                cout << "**************************" << endl
-    //                     << "time: " << (*it).state().currentTime().cycle() << endl;
-    //                cout << "Calcing" << endl;
-    //                dnnvel.Calculate(dnnvel.make_input((*it).state()));
-    //                cout << "Calcing Done" << endl;
-    //                cout << "dnnvel.Output: " << dnnvel.mOutput << endl;
-    //
-    //                Polar vel_p(dnnvel.mOutput(1, 0), dnnvel.mOutput(0, 0));
-    //                Polar pass_dir = make_polar((*it).state().ballHolder()->pos(), (*it).action().targetPoint());
-    //                double speed_diff = abs(vel_p.r - (*it).action().firstBallSpeed());
-    //                double angle_diff = abs(vel_p.teta - pass_dir.teta);
-    //                cout << "speed_diff: " << speed_diff << endl;
-    //                cout << "angle_diff: " << angle_diff << endl;
-    //
-    //                ev += 10 - angle_diff;
-    //                ev += 10 - speed_diff;
-    //            }
+//    Polar vel_p;
+//    Polar pass_dir;
+//    if (OffenseConfig::i(wm.teamName())->vel) {
+//        cout << "###DNN vel Works" << endl;
+//        static DNN2d dnnvel("weights_vel.dnn");
+//        cout << "**************************" << endl
+//             << "time: " << wm.time().cycle() << endl;
+//        cout << "Calcing" << endl;
+//        dnnvel.Calculate(dnnvel.make_input(wm));
+//        cout << "Calcing Done" << endl;
+//        cout << "dnnvel.Output: " << dnnvel.mOutput << endl;
+
+//        vel_p = make_polar(dnnvel.mOutput(1, 0), dnnvel.mOutput(0, 0));
+//        pass_dir = make_polar(wm.self().pos(), (*it).action().targetPoint());
+//    }
 
     for (;;) {
         //
@@ -524,6 +524,12 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
                     cout << "CHNN Matched" << endl;
                 }
             }
+//            if(OffenseConfig::i()->vel){
+//                double speed_diff = abs(vel_p.r - (*it).action().firstBallSpeed());
+//                double angle_diff = abs(vel_p.teta - pass_dir.teta);
+//                ev += 10 - angle_diff;
+//                ev += 10 - speed_diff;
+//            }
 
 
 #ifdef ACTION_CHAIN_DEBUG
