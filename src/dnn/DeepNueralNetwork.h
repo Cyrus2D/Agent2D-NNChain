@@ -1,3 +1,6 @@
+#ifndef DEEPNN
+#define DEEPNN
+
 #include "Layer.h"
 #include <vector>
 #include <fstream>
@@ -73,3 +76,5 @@ public:
         ReadFromKeras(file);
     }
 };
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef LAYER
+#define LAYER
+
 #include "../Eg/Eigen/Dense"
 #include "Function.h"
 using Eigen::MatrixXd;
@@ -44,3 +47,5 @@ public:
     }
     std::function<void(MatrixXd &)> mFunction;
 };
+
+#endif

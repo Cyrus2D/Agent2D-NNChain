@@ -48,6 +48,7 @@
 #include <rcsc/common/server_param.h>
 
 #include "neck_offensive_intercept_neck.h"
+#include "bhv_basic_offensive_kick.h"
 
 using namespace rcsc;
 
@@ -55,68 +56,66 @@ using namespace rcsc;
 /*!
 
  */
+
+void UnMark::find_best_target() {
+    DNN2d::i();
+}
+
 bool
-Bhv_BasicMove::execute( PlayerAgent * agent )
-{
-    dlog.addText( Logger::TEAM,
-                  __FILE__": Bhv_BasicMove" );
+Bhv_BasicMove::execute(PlayerAgent *agent) {
+    dlog.addText(Logger::TEAM,
+                 __FILE__": Bhv_BasicMove");
     //-----------------------------------------------
     // tackle
-    if ( Bhv_BasicTackle( 0.8, 80.0 ).execute( agent ) )
-    {
+    if (Bhv_BasicTackle(0.8, 80.0).execute(agent)) {
         return true;
     }
-    const WorldModel & wm = agent->world();
+    const WorldModel &wm = agent->world();
     /*--------------------------------------------------------*/
     // chase ball
     const int self_min = wm.interceptTable()->selfReachCycle();
     const int mate_min = wm.interceptTable()->teammateReachCycle();
     const int opp_min = wm.interceptTable()->opponentReachCycle();
 
-    if ( ! wm.existKickableTeammate()
-         && ( self_min <= 3
-              || ( self_min <= mate_min
-                   && self_min < opp_min + 3 )
-              )
-         )
-    {
-        dlog.addText( Logger::TEAM,
-                      __FILE__": intercept" );
-        Body_Intercept().execute( agent );
-        agent->setNeckAction( new Neck_OffensiveInterceptNeck() );
+    if (!wm.existKickableTeammate()
+        && (self_min <= 3
+            || (self_min <= mate_min
+                && self_min < opp_min + 3)
+        )
+            ) {
+        dlog.addText(Logger::TEAM,
+                     __FILE__": intercept");
+        Body_Intercept().execute(agent);
+        agent->setNeckAction(new Neck_OffensiveInterceptNeck());
 
         return true;
     }
 
-    const Vector2D target_point = Strategy::i().getPosition( wm.self().unum() );
-    const double dash_power = Strategy::get_normal_dash_power( wm );
+    const Vector2D target_point = Strategy::i().getPosition(wm.self().unum());
+    const double dash_power = Strategy::get_normal_dash_power(wm);
 
     double dist_thr = wm.ball().distFromSelf() * 0.1;
-    if ( dist_thr < 1.0 ) dist_thr = 1.0;
+    if (dist_thr < 1.0) dist_thr = 1.0;
 
-    dlog.addText( Logger::TEAM,
-                  __FILE__": Bhv_BasicMove target=(%.1f %.1f) dist_thr=%.2f",
-                  target_point.x, target_point.y,
-                  dist_thr );
+    dlog.addText(Logger::TEAM,
+                 __FILE__": Bhv_BasicMove target=(%.1f %.1f) dist_thr=%.2f",
+                 target_point.x, target_point.y,
+                 dist_thr);
 
-    agent->debugClient().addMessage( "BasicMove%.0f", dash_power );
-    agent->debugClient().setTarget( target_point );
-    agent->debugClient().addCircle( target_point, dist_thr );
+    agent->debugClient().addMessage("BasicMove%.0f", dash_power);
+    agent->debugClient().setTarget(target_point);
+    agent->debugClient().addCircle(target_point, dist_thr);
 
-    if ( ! Body_GoToPoint( target_point, dist_thr, dash_power
-                           ).execute( agent ) )
-    {
-        Body_TurnToBall().execute( agent );
+    if (!Body_GoToPoint(target_point, dist_thr, dash_power
+    ).execute(agent)) {
+        Body_TurnToBall().execute(agent);
     }
 
-    if ( wm.existKickableOpponent()
-         && wm.ball().distFromSelf() < 18.0 )
-    {
-        agent->setNeckAction( new Neck_TurnToBall() );
-    }
-    else
-    {
-        agent->setNeckAction( new Neck_TurnToBallOrScan() );
+    if (wm.existKickableOpponent()
+        && wm.ball().distFromSelf() < 18.0) {
+        agent->setNeckAction(new Neck_TurnToBall());
+    } else {
+        agent->setNeckAction(new Neck_TurnToBallOrScan());
     }
 
     return true;

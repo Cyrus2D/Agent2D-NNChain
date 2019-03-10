@@ -29,17 +29,36 @@
 
 #include <rcsc/geom/vector_2d.h>
 #include <rcsc/player/soccer_action.h>
+#include <rcsc/player/world_model.h>
+#include "dnn/DNN2d.h"
+
 
 class Bhv_BasicMove
-    : public rcsc::SoccerBehavior {
+        : public rcsc::SoccerBehavior {
 public:
-    Bhv_BasicMove()
-      { }
+    Bhv_BasicMove() {}
 
-    bool execute( rcsc::PlayerAgent * agent );
+    bool execute(rcsc::PlayerAgent *agent);
 
 private:
-    double getDashPower( const rcsc::PlayerAgent * agent );
+    double getDashPower(const rcsc::PlayerAgent *agent);
+};
+
+
+
+class UnMark {
+public:
+    const rcsc::WorldModel &wm;
+    rcsc::Vector2D home_pos;
+    rcsc::Vector2D target;
+
+//    UnMark(const rcsc::WorldModel &world, rcsc::Vector2D _home_pos) {
+//        wm = world;
+//        home_pos = _home_pos;
+//        find_best_target();
+//    }
+
+    void find_best_target();
 };
 
 #endif

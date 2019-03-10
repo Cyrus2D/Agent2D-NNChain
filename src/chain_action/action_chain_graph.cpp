@@ -63,7 +63,7 @@ const size_t ActionChainGraph::DEFAULT_MAX_CHAIN_LENGTH = 4;
 const size_t ActionChainGraph::DEFAULT_MAX_EVALUATE_LIMIT = 500;
 
 std::vector<std::pair<Vector2D, double> > ActionChainGraph::S_evaluated_points;
-
+DNN2d* DNN2d::ins = NULL;
 
 namespace {
 
@@ -426,21 +426,20 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
     //
 
     //NeuralNetwork unum
-    static DNN2d dnn("weights.dnn");
     int nn_unum;
     if (OffenseConfig::i(wm.teamName())->dnn) {
         cout << "###DNN WORKS" << endl;
         cout << "**************************" << endl
              << "time: " << wm.time().cycle() << endl;
         cout << "Calcing" << endl;
-        dnn.Calculate(dnn.make_input(wm));
+        DNN2d::i("weights.dnn")->Calculate(DNN2d::i()->make_input(wm));
         cout << "Calcing Done" << endl;
-        cout << "dnn.Output: " << dnn.mOutput << endl;
+//        cout << "dnn.Output: " << dnn.mOutput << endl;
 
-        for (int i = 0; i < dnn.mOutput.rows(); i++) {
-            dlog.addText(Logger::KICK,"p(%d): %.2f", i, dnn.mOutput(i, 0));
+        for (int i = 0; i < DNN2d::i()->mOutput.rows(); i++) {
+            dlog.addText(Logger::KICK,"p(%d): %.2f", i, DNN2d::i()->mOutput(i, 0));
         }
-        nn_unum = dnn.max_output() + 1;
+        nn_unum = DNN2d::i()->max_output() + 1;
         const AbstractPlayerObject* tm = wm.ourPlayer(nn_unum);
         dlog.addLine(Logger::KICK, wm.self().pos(), tm->pos(), 0, 0, 0);
         dlog.addCircle(Logger::KICK, tm->pos(), 1.5, 0,0,0);
@@ -520,7 +519,7 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
 
             if(OffenseConfig::i()->dnn){
                 if (nn_unum == (*it).state().ballHolderUnum()) {
-                    ev += 100;
+                    ev += 1000;
                     cout << "CHNN Matched" << endl;
                 }
             }

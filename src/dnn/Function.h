@@ -1,3 +1,6 @@
+#ifndef FUNCTION_H
+#define FUNCTION_H
+
 #include "../Eg/Eigen/Dense"
 #include <iostream>
 using Eigen::MatrixXd;
@@ -62,3 +65,5 @@ static void SigmoidFunction(MatrixXd & output){
         }
     }
 }
+
+#endif

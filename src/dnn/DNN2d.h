@@ -58,6 +58,13 @@ public:
     bool readed;
     string file;
 
+    static DNN2d *ins;
+    static DNN2d *i(string _file_name =  ""){
+        if(ins == NULL)
+            ins = new DNN2d(_file_name);
+        return ins;
+    }
+
     DNN2d(string _file) : file(_file) {
         readed = false;
         cout << "Updating" << endl;
