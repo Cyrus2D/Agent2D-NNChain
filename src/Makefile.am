@@ -86,6 +86,16 @@ PLAYERHEADERS = \
 	sample_player.h \
 	strategy.h
 
+DNNSOURCES = \
+	dnn/Layer.cpp \
+	dnn/Layer.h \
+	dnn/Function.cpp \
+	dnn/Function.h \
+	dnn/DNN2d.cpp \
+	dnn/DNN2d.h \
+	dnn/DeepNueralNetwork.cpp \
+	dnn/DeepNueralNetwork.h
+
 CHAINACTIONSOURCES = \
 	chain_action/actgen_action_chain_length_filter.h \
 	chain_action/actgen_cross.cpp \
@@ -225,6 +235,7 @@ noinst_DATA = \
 	formations-taker/setplay-our-formation.conf
 
 sample_player_SOURCES = \
+	$(DNNSOURCES) \
 	$(CHAINACTIONSOURCES) \
 	$(PLAYERSOURCES)
 sample_player_CXXFLAGS = -W -Wall -std=c++11

@@ -1,8 +1,8 @@
 #ifndef LAYER
 #define LAYER
 
-#include "../Eg/Eigen/Dense"
 #include "Function.h"
+#include <eigen3/Eigen/Dense>
 using Eigen::MatrixXd;
 class Layer{
 public:
@@ -12,39 +12,10 @@ public:
     MatrixXd mBios;
 
     Layer() = delete;
-    Layer(const MatrixXd weight, const MatrixXd bios){
-        mWeight = weight;
-        mBios = bios;
-        mFunction = LinearFunction;
-    }
-    Layer(const MatrixXd weight, const MatrixXd bios, Function function){
-        mWeight = weight;
-        mBios = bios;
-        switch (function) {
-        case Function::Linear:
-            mFunction = LinearFunction;
-            break;
-        case Function::ReLu:
-            mFunction = ReLuFunction;
-            break;
-        case Function::SoftMax:
-            mFunction = SoftMaxFunction;
-            break;
-        case Function::Sigmoid:
-            mFunction = SigmoidFunction;
-            break;
-        }
-
-    }
-    void Calculate(){
-        mOutput = mWeight * mInput;
-        mOutput += mBios;
-        mFunction(mOutput);
-    }
-    void Calculate(MatrixXd input){
-        mInput = input;
-        Calculate();
-    }
+    Layer(const MatrixXd weight, const MatrixXd bios);
+    Layer(const MatrixXd weight, const MatrixXd bios, Function function);
+    void Calculate();
+    void Calculate(MatrixXd input);
     std::function<void(MatrixXd &)> mFunction;
 };
 

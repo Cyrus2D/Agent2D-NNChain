@@ -1,7 +1,7 @@
 #ifndef FUNCTION_H
 #define FUNCTION_H
 
-#include "../Eg/Eigen/Dense"
+#include <eigen3/Eigen/Dense>
 #include <iostream>
 using Eigen::MatrixXd;
 
@@ -9,25 +9,8 @@ enum class Function
 {
     Linear, Sigmoid, ReLu, SoftMax
 };
-Function StringToFunction(std::string function)
-{
-    if (function.compare("linear") == 0)
-    {
-        return Function::Linear;
-    }
-    if (function.compare("relu") == 0)
-    {
-        return Function::ReLu;
-    }
-    if (function.compare("sigmoid") == 0)
-    {
-        return Function::Sigmoid;
-    }
-    if (function.compare("softmax") == 0)
-    {
-        return Function::SoftMax;
-    }
-}
+Function StringToFunction(std::string function);
+//static void LinearFunction(MatrixXd & output);
 static void LinearFunction(MatrixXd & output){
     for(int i = 0; i < output.rows(); i++){
         for(int j = 0; j < output.cols(); j++){
@@ -35,6 +18,7 @@ static void LinearFunction(MatrixXd & output){
         }
     }
 }
+
 static void ReLuFunction(MatrixXd & output){
     for(int i = 0; i < output.rows(); i++){
         for(int j = 0; j < output.cols(); j++){
@@ -66,4 +50,7 @@ static void SigmoidFunction(MatrixXd & output){
     }
 }
 
+//static void ReLuFunction(MatrixXd & output);
+//static void SoftMaxFunction(MatrixXd & output);
+//static void SigmoidFunction(MatrixXd & output);
 #endif
