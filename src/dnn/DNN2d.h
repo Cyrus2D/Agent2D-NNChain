@@ -25,28 +25,36 @@ public:
 };
 
 Polar make_polar(rcsc::Vector2D start, rcsc::Vector2D endp);
+
 class DNN2d : public DeepNueralNetwork {
 public:
     bool readed;
     string file;
 
     static DNN2d *ins;
-    static DNN2d *i(string _file_name =  "");
+
+    static DNN2d *i(string _file_name = "");
 
     DNN2d(string _file);
 
-    bool updata_weights() ;
+    bool updata_weights();
 
     MatrixXd make_input(const rcsc::WorldModel &state);
 
-    void display() ;
+    MatrixXd make_input(int kicker_unum,
+                        rcsc::Vector2D *tmpos,
+                        rcsc::Vector2D *opppos,
+                        rcsc::Vector2D ballpos,
+                        rcsc::Vector2D ballvel);
+
+    void display();
 
     int max_output();
 
 private:
-    const int find_kicker(const rcsc::WorldModel &state) ;
+    const int find_kicker(const rcsc::WorldModel &state);
 
-    MatrixXd vector_ro_matrix(vector<double> &x) ;
+    MatrixXd vector_ro_matrix(vector<double> &x);
 
 };
 

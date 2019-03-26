@@ -50,7 +50,7 @@
 
 using namespace rcsc;
 
-static const double SAME_PASSER_POS_THRESHOLD2 = std::pow( 10.0, 2 );
+static const double SAME_PASSER_POS_THRESHOLD2 = std::pow(10.0, 2);
 
 namespace {
 
@@ -58,28 +58,20 @@ namespace {
 /*!
 
  */
-double
-s_get_ball_speed_for_pass( const double & distance )
-{
-    if ( distance >= 20.0 )
-    {
-        //return 3.0;
-        return 2.5;
+    double
+    s_get_ball_speed_for_pass(const double &distance) {
+        if (distance >= 20.0) {
+            //return 3.0;
+            return 2.5;
+        } else if (distance >= 8.0) {
+            //return 2.5;
+            return 2.0;
+        } else if (distance >= 5.0) {
+            return 1.8;
+        } else {
+            return 1.5;
+        }
     }
-    else if ( distance >= 8.0 )
-    {
-        //return 2.5;
-        return 2.0;
-    }
-    else if ( distance >= 5.0 )
-    {
-        return 1.8;
-    }
-    else
-    {
-        return 1.5;
-    }
-}
 
 }
 
@@ -88,8 +80,7 @@ s_get_ball_speed_for_pass( const double & distance )
 /*!
 
  */
-ActGen_DirectPass::ActGen_DirectPass()
-{
+ActGen_DirectPass::ActGen_DirectPass() {
 
 }
 
@@ -97,8 +88,7 @@ ActGen_DirectPass::ActGen_DirectPass()
 /*!
 
  */
-ActGen_DirectPass::~ActGen_DirectPass()
-{
+ActGen_DirectPass::~ActGen_DirectPass() {
 
 }
 
@@ -107,17 +97,15 @@ ActGen_DirectPass::~ActGen_DirectPass()
 
  */
 void
-ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
-                             const PredictState & state,
-                             const WorldModel & current_wm,
-                             const std::vector< ActionStatePair > & path ) const
-{
+ActGen_DirectPass::generate(std::vector<ActionStatePair> *result,
+                            const PredictState &state,
+                            const WorldModel &current_wm,
+                            const std::vector<ActionStatePair> &path) const {
     static const int VALID_PLAYER_THRESHOLD = 10;
-    static GameTime s_last_call_time( 0, 0 );
+    static GameTime s_last_call_time(0, 0);
     static int s_action_count = 0;
 
-    if ( current_wm.time() != s_last_call_time )
-    {
+    if (current_wm.time() != s_last_call_time) {
         s_action_count = 0;
         s_last_call_time = current_wm.time();
     }
@@ -132,8 +120,7 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
     // check same situation in history
     //
     bool old_holder_table[11];
-    for ( int i = 0; i < 11; ++i )
-    {
+    for (int i = 0; i < 11; ++i) {
         old_holder_table[i] = false;
     }
 
@@ -142,30 +129,22 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
                                          current_wm, path, 0.0 );
 #endif
 
-    for ( int c = static_cast< int >( path.size() ) - 1; c >= 0; --c )
-    {
+    for (int c = static_cast< int >( path.size()) - 1; c >= 0; --c) {
         int ball_holder_unum = Unum_Unknown;
 
-        if ( c == 0 )
-        {
+        if (c == 0) {
             int self_min = current_wm.interceptTable()->selfReachCycle();
             int teammate_min = current_wm.interceptTable()->teammateReachCycle();
 
-            if ( teammate_min < self_min )
-            {
-                const PlayerObject * teammate = current_wm.interceptTable()->fastestTeammate();
-                if ( teammate )
-                {
+            if (teammate_min < self_min) {
+                const PlayerObject *teammate = current_wm.interceptTable()->fastestTeammate();
+                if (teammate) {
                     ball_holder_unum = teammate->unum();
                 }
-            }
-            else
-            {
+            } else {
                 ball_holder_unum = current_wm.self().unum();
             }
-        }
-        else
-        {
+        } else {
             ball_holder_unum = path[c - 1].state().ballHolder()->unum();
         }
 
@@ -176,8 +155,7 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
                       c, ball_holder_unum );
 #endif
 
-        if ( ball_holder_unum == Unum_Unknown )
-        {
+        if (ball_holder_unum == Unum_Unknown) {
 #ifdef DEBUG_PRINT
             dlog.addText( Logger::ACTION_CHAIN,
                           "__ unknown number ball holder" );
@@ -185,7 +163,7 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
             continue;
         }
 
-        old_holder_table[ ball_holder_unum - 1 ] = true;
+        old_holder_table[ball_holder_unum - 1] = true;
     }
 
 #ifdef DEBUG_PRINT
@@ -203,10 +181,9 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
     //
     // add pass candidates
     //
-    const rcsc::AbstractPlayerObject * holder = state.ballHolder();
+    const rcsc::AbstractPlayerObject *holder = state.ballHolder();
 
-    if ( ! holder )
-    {
+    if (!holder) {
 #ifdef DEBUG_PRINT
         dlog.addText( Logger::ACTION_CHAIN,
                       "direct: invalid holder" );
@@ -218,22 +195,20 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
     const SimplePassChecker pass_check;
     int generated_count = 0;
 
-    for ( PredictPlayerPtrCont::const_iterator
-              it = state.ourPlayers().begin(),
-              end = state.ourPlayers().end();
-          it != end;
-          ++it )
-    {
-        if ( ! (*it)->isValid() ) continue;
+    for (PredictPlayerPtrCont::const_iterator
+                 it = state.ourPlayers().begin(),
+                 end = state.ourPlayers().end();
+         it != end;
+         ++it) {
+        if (!(*it)->isValid()) continue;
 
 #ifdef DEBUG_PRINT
         dlog.addText( Logger::ACTION_CHAIN,
                       "direct: checking to %d", (*it)->unum() );
 #endif
 
-        if ( (*it)->unum() != Unum_Unknown
-             && old_holder_table[ (*it)->unum() - 1 ] )
-        {
+        if ((*it)->unum() != Unum_Unknown
+            && old_holder_table[(*it)->unum() - 1]) {
 #ifdef DEBUG_PRINT
             dlog.addText( Logger::ACTION_CHAIN,
                           "direct: ignored old holder %d",
@@ -242,8 +217,7 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
             continue;
         }
 
-        if ( (*it)->unum() == state.ballHolderUnum() )
-        {
+        if ((*it)->unum() == state.ballHolderUnum()) {
 #ifdef DEBUG_PRINT
             dlog.addText( Logger::ACTION_CHAIN,
                           "direct: ignored direct pass to self" );
@@ -251,12 +225,11 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
             continue;
         }
 
-        if ( (*it)->posCount() > VALID_PLAYER_THRESHOLD
-             || (*it)->isGhost()
-             || (*it)->unum() == Unum_Unknown
-             || (*it)->unumCount() > VALID_PLAYER_THRESHOLD
-             || (*it)->isTackling() )
-        {
+        if ((*it)->posCount() > VALID_PLAYER_THRESHOLD
+            || (*it)->isGhost()
+            || (*it)->unum() == Unum_Unknown
+            || (*it)->unumCount() > VALID_PLAYER_THRESHOLD
+            || (*it)->isTackling()) {
 #ifdef DEBUG_PRINT
             dlog.addText( Logger::ACTION_CHAIN,
                           "direct: can't pass from %d to %d(%.1f %.1f),"
@@ -271,12 +244,11 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
         //
         // check direct pass
         //
-        const double dist = ( (*it)->pos() - holder->pos() ).r();
+        const double dist = ((*it)->pos() - holder->pos()).r();
 
-        const double ball_speed = s_get_ball_speed_for_pass( ( (*it)->pos() - holder->pos() ).r() );
+        const double ball_speed = s_get_ball_speed_for_pass(((*it)->pos() - holder->pos()).r());
 
-        if ( ! pass_check( state, *holder, **it, (**it).pos(), ball_speed ) )
-        {
+        if (!pass_check(state, *holder, **it, (**it).pos(), ball_speed)) {
 #ifdef DEBUG_PRINT
             dlog.addText( Logger::ACTION_CHAIN,
                           "direct: can't pass from %d to %d",
@@ -288,28 +260,28 @@ ActGen_DirectPass::generate( std::vector< ActionStatePair > * result,
         const unsigned long kick_step = 2;
 
         const unsigned long spend_time
-            = calc_length_geom_series( ball_speed,
-                                       dist,
-                                       ServerParam::i().ballDecay() )
-            + kick_step;
+                = calc_length_geom_series(ball_speed,
+                                          dist,
+                                          ServerParam::i().ballDecay())
+                  + kick_step;
 
-        PredictState::ConstPtr result_state( new PredictState( state,
-                                                               spend_time,
-                                                               (*it)->unum(),
-                                                               (*it)->pos() ) );
+        PredictState::ConstPtr result_state(new PredictState(state,
+                                                             spend_time,
+                                                             (*it)->unum(),
+                                                             (*it)->pos()));
 
-        CooperativeAction::Ptr action( new Pass( holder->unum(),
-                                                 (*it)->unum(),
-                                                 (*it)->pos(),
-                                                 ball_speed,
-                                                 spend_time,
-                                                 kick_step,
-                                                 false,
-                                                 "actgenDirect" ) );
+        CooperativeAction::Ptr action(new Pass(holder->unum(),
+                                               (*it)->unum(),
+                                               (*it)->pos(),
+                                               ball_speed,
+                                               spend_time,
+                                               kick_step,
+                                               false,
+                                               "actgenDirect"));
         ++s_action_count;
         ++generated_count;
-        action->setIndex( s_action_count );
-        result->push_back( ActionStatePair( action, result_state ) );
+        action->setIndex(s_action_count);
+        result->push_back(ActionStatePair(action, result_state));
 
     }
 

@@ -56,9 +56,73 @@ using namespace rcsc;
 /*!
 
  */
+UnMark::UnMark(const WorldModel &wm, Vector2D _home_pos) {
+    home_pos = _home_pos;
+    target = home_pos;
+    find_best_target(wm);
+}
 
-void UnMark::find_best_target() {
-    DNN2d::i();
+void UnMark::find_best_target(const WorldModel &wm) {
+    cout << "####CYCLE: " << wm.time().cycle() << endl;
+    Vector2D tmpos[11], opppos[11], ballpos, ballvel, selfpos;
+    int kicker_unum = wm.getTeammateNearestToBall(10)->unum(),
+            self_unum = wm.self().unum();
+    set_poses(tmpos, opppos, wm);
+    ballpos = wm.ball().pos();
+    ballvel = wm.ball().vel();
+    selfpos = wm.self().pos();
+
+    DNN2d::i("weights.dnn");
+
+    bool finded_pos = false;
+    for (int depth = 0; depth < 2; depth++) {
+        for (double dist = 2; dist <= 10.0; dist += 2.0) {
+            for (double angle = 0; angle < 360.0; angle += 30) {
+                Vector2D new_pos = selfpos + Vector2D::polar2vector(dist, angle);
+                tmpos[self_unum - 1] = new_pos;
+                DNN2d::i()->Calculate(DNN2d::i()->make_input(
+                        kicker_unum,
+                        tmpos,
+                        opppos,
+                        ballpos,
+                        ballvel
+                ));
+                int nn_unum = DNN2d::i()->max_output() + 1;
+                cout << "nn_unum: " << nn_unum << endl;
+                if (nn_unum == self_unum) {
+                    finded_pos = true;
+                    target = new_pos;
+                    break;
+                }
+            }
+            if (finded_pos) break;
+        }
+        if (finded_pos) break;
+        tmpos[self_unum - 1] = selfpos;
+        DNN2d::i()->Calculate(DNN2d::i()->make_input(
+                kicker_unum,
+                tmpos,
+                opppos,
+                ballpos,
+                ballvel
+        ));
+        kicker_unum = DNN2d::i()->max_output() + 1;
+    }
+}
+
+void UnMark::set_poses(Vector2D *tmpos, Vector2D *opppos, const WorldModel &wm) {
+    for (int i = 1; i <= 11; i++) {
+        const AbstractPlayerObject *tm = wm.ourPlayer(i);
+        if (tm == NULL || tm->unum() < 1) continue;
+
+        tmpos[i - 1] = tm->pos();
+    }
+    for (int i = 1; i <= 11; i++) {
+        const AbstractPlayerObject *opp = wm.theirPlayer(i);
+        if (opp == NULL || opp->unum() < 1) continue;
+
+        opppos[i - 1] = opp->pos();
+    }
 }
 
 bool
@@ -101,6 +165,8 @@ Bhv_BasicMove::execute(PlayerAgent *agent) {
                  __FILE__": Bhv_BasicMove target=(%.1f %.1f) dist_thr=%.2f",
                  target_point.x, target_point.y,
                  dist_thr);
+
+    dlog.addLine(Logger::DRIBBLE, wm.self().pos(), target_point, 255, 0, 0);
 
     agent->debugClient().addMessage("BasicMove%.0f", dash_power);
     agent->debugClient().setTarget(target_point);

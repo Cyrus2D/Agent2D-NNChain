@@ -17,10 +17,10 @@ Layer::Layer(const MatrixXd weight, const MatrixXd bios, Function function){
         mFunction = ReLuFunction;
         break;
     case Function::SoftMax:
-//        mFunction = SoftMaxFunction;
+        mFunction = SoftMaxFunction;
         break;
     case Function::Sigmoid:
-//        mFunction = SigmoidFunction;
+        mFunction = SigmoidFunction;
         break;
     }
 

@@ -428,22 +428,17 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
     //NeuralNetwork unum
     int nn_unum;
     if (OffenseConfig::i(wm.teamName())->dnn) {
-        cout << "###DNN WORKS" << endl;
-        cout << "**************************" << endl
-             << "time: " << wm.time().cycle() << endl;
-        cout << "Calcing" << endl;
         DNN2d::i("weights.dnn")->Calculate(DNN2d::i()->make_input(wm));
-        cout << "Calcing Done" << endl;
-//        cout << "dnn.Output: " << dnn.mOutput << endl;
 
         for (int i = 0; i < DNN2d::i()->mOutput.rows(); i++) {
-            dlog.addText(Logger::KICK,"p(%d): %.2f", i, DNN2d::i()->mOutput(i, 0));
+            ;
+//            dlog.addText(Logger::KICK,"p(%d): %.2f", i, DNN2d::i()->mOutput(i, 0));
         }
         nn_unum = DNN2d::i()->max_output() + 1;
         const AbstractPlayerObject* tm = wm.ourPlayer(nn_unum);
         dlog.addLine(Logger::KICK, wm.self().pos(), tm->pos(), 0, 0, 0);
         dlog.addCircle(Logger::KICK, tm->pos(), 1.5, 0,0,0);
-        dlog.addText(Logger::KICK, "Point To nn_unum: %d", nn_unum);
+//        dlog.addText(Logger::KICK, "Point To nn_unum: %d", nn_unum);
 //        dlog.addLine();
 
     }
@@ -518,9 +513,8 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
             ++(*n_evaluated);
 
             if(OffenseConfig::i()->dnn){
-                if (nn_unum == (*it).state().ballHolderUnum()) {
+                if (nn_unum == (*it).state().ballHolderUnum() /*&& candidate_series.size() <= 1*/) {
                     ev += 1000;
-                    cout << "CHNN Matched" << endl;
                 }
             }
 //            if(OffenseConfig::i()->vel){

@@ -4,6 +4,7 @@
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 using Eigen::MatrixXd;
+using namespace std;
 
 enum class Function
 {
