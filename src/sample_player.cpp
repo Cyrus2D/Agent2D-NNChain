@@ -85,7 +85,7 @@
 #include <sstream>
 #include <string>
 #include <cstdlib>
-
+#include "dnn/DNN2d.h"
 using namespace rcsc;
 
 OffenseConfig *OffenseConfig::ins = NULL;
@@ -211,7 +211,9 @@ SamplePlayer::initImpl(CmdLineParser &cmd_parser) {
                   << config().configDir() << "/kick-table]"
                   << std::endl;
     }
-
+    if (OffenseConfig::i(config().teamName())->dnn) {
+        DNN2d::i("weights.dnn");
+    }
     return true;
 }
 
@@ -249,7 +251,7 @@ SamplePlayer::actionImpl() {
     //
     // update action chain
     //
-    ActionChainHolder::instance().update(world());
+    ActionChainHolder::instance().update(this, world());
 
 
     //

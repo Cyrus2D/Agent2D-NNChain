@@ -25,7 +25,10 @@ public:
 };
 
 Polar make_polar(rcsc::Vector2D start, rcsc::Vector2D endp);
+void wm2vector(const rcsc::WorldModel & wm, vector<rcsc::Vector2D> & tm_pos,vector<rcsc::Vector2D> & opp_pos, rcsc::Vector2D & ball_pos, rcsc::Vector2D & ball_vel);
+vector<double> vector2feature(const rcsc::WorldModel& wm,vector<rcsc::Vector2D> & tm_pos,vector<rcsc::Vector2D> & opp_pos, rcsc::Vector2D & ball_pos, rcsc::Vector2D & ball_vel);
 
+MatrixXd vector_to_matrix(vector<double> &x);
 class DNN2d : public DeepNueralNetwork {
 public:
     bool readed;
@@ -39,22 +42,14 @@ public:
 
     bool updata_weights();
 
-    MatrixXd make_input(const rcsc::WorldModel &state);
-
-    MatrixXd make_input(int kicker_unum,
-                        rcsc::Vector2D *tmpos,
-                        rcsc::Vector2D *opppos,
-                        rcsc::Vector2D ballpos,
-                        rcsc::Vector2D ballvel);
-
     void display();
 
-    int max_output();
+    std::pair<int, double> max_output();
 
 private:
     const int find_kicker(const rcsc::WorldModel &state);
 
-    MatrixXd vector_ro_matrix(vector<double> &x);
+
 
 };
 

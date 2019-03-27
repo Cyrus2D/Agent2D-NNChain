@@ -59,8 +59,8 @@
 
 using namespace rcsc;
 
-const size_t ActionChainGraph::DEFAULT_MAX_CHAIN_LENGTH = 4;
-const size_t ActionChainGraph::DEFAULT_MAX_EVALUATE_LIMIT = 500;
+const size_t ActionChainGraph::DEFAULT_MAX_CHAIN_LENGTH = 1;
+const size_t ActionChainGraph::DEFAULT_MAX_EVALUATE_LIMIT = 5000;
 
 std::vector<std::pair<Vector2D, double> > ActionChainGraph::S_evaluated_points;
 DNN2d* DNN2d::ins = NULL;
@@ -137,7 +137,7 @@ ActionChainGraph::ActionChainGraph(const FieldEvaluator::ConstPtr &evaluator,
 
  */
 void
-ActionChainGraph::calculateResult(const WorldModel &wm) {
+ActionChainGraph::calculateResult(rcsc::PlayerAgent * agent, const WorldModel &wm) {
     debugPrintCurrentState(wm);
 
 #if (defined DEBUG_PROFILE) || (defined ACTION_CHAIN_LOAD_DEBUG)
@@ -151,7 +151,7 @@ ActionChainGraph::calculateResult(const WorldModel &wm) {
     //
     // best first
     //
-    calculateResultBestFirstSearch(wm, &n_evaluated);
+    calculateResultBestFirstSearch(agent, wm, &n_evaluated);
 
     if (M_result.empty()) {
         const PredictState current_state(wm);
@@ -380,7 +380,7 @@ public:
 
  */
 void
-ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
+ActionChainGraph::calculateResultBestFirstSearch(rcsc::PlayerAgent * agent, const WorldModel &wm,
                                                  unsigned long *n_evaluated) {
     //
     // initialize
@@ -428,19 +428,22 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
     //NeuralNetwork unum
     int nn_unum;
     if (OffenseConfig::i(wm.teamName())->dnn) {
-        DNN2d::i("weights.dnn")->Calculate(DNN2d::i()->make_input(wm));
+        vector<Vector2D> tm_pos;
+        vector<Vector2D> opp_pos;
+        Vector2D ball_pos;
+        Vector2D ball_vel;
+        wm2vector(wm, tm_pos, opp_pos, ball_pos, ball_vel);
+        auto features_vec = vector2feature(wm, tm_pos, opp_pos, ball_pos, ball_vel);
+        MatrixXd features_mat = vector_to_matrix(features_vec);
+        DNN2d::i()->Calculate(features_mat);
 
-        for (int i = 0; i < DNN2d::i()->mOutput.rows(); i++) {
-            ;
-//            dlog.addText(Logger::KICK,"p(%d): %.2f", i, DNN2d::i()->mOutput(i, 0));
-        }
-        nn_unum = DNN2d::i()->max_output() + 1;
+        nn_unum = std::get<0>(DNN2d::i()->max_output()) + 1;
         const AbstractPlayerObject* tm = wm.ourPlayer(nn_unum);
-        dlog.addLine(Logger::KICK, wm.self().pos(), tm->pos(), 0, 0, 0);
-        dlog.addCircle(Logger::KICK, tm->pos(), 1.5, 0,0,0);
-//        dlog.addText(Logger::KICK, "Point To nn_unum: %d", nn_unum);
-//        dlog.addLine();
-
+        agent->debugClient().addLine(wm.self().pos(), tm->pos());
+        agent->debugClient().addCircle(tm->pos(), 1.5);
+        agent->debugClient().addCircle(tm->pos(), 2.5);
+        agent->debugClient().addCircle(tm->pos(), 3.5);
+        agent->debugClient().addMessage("nader");
     }
     //NeuralNetwork vel
 //    Polar vel_p;
@@ -520,7 +523,7 @@ ActionChainGraph::calculateResultBestFirstSearch(const WorldModel &wm,
 //            if(OffenseConfig::i()->vel){
 //                double speed_diff = abs(vel_p.r - (*it).action().firstBallSpeed());
 //                double angle_diff = abs(vel_p.teta - pass_dir.teta);
-//                ev += 10 - angle_diff;
+//                ev += 10 - angle_dif20190314135110-CYRUS_0-vs-HELIOS2018_1.rcgf;
 //                ev += 10 - speed_diff;
 //            }
 

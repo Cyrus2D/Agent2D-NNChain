@@ -56,98 +56,6 @@ bool DNN2d::updata_weights() {
     return ReadFromTensorFlow(file);
 }
 
-MatrixXd DNN2d::make_input(const rcsc::WorldModel &state) {
-    vector<double> x;
-    int kicker_unum = find_kicker(state);
-    const rcsc::AbstractPlayerObject *kicker = state.ourPlayer(kicker_unum);
-
-    // Ball
-    Polar ball_p = make_polar(kicker->pos(), state.ball().pos());
-    Polar ball_vel = make_polar(rcsc::Vector2D(0, 0), state.ball().vel());
-    x.push_back(state.ball().pos().x);
-    x.push_back(state.ball().pos().y);
-    x.push_back(ball_p.r);
-    x.push_back(ball_p.teta);
-    x.push_back(ball_vel.r);
-    x.push_back(ball_vel.teta);
-
-    // TM
-    for (int i = 1; i <= 11; i++) {
-        const rcsc::AbstractPlayerObject *tm = state.ourPlayer(i);
-        if (i == kicker_unum) {
-            x.push_back(tm->pos().x);
-            x.push_back(tm->pos().y);
-        } else {
-            Polar player_p = make_polar(kicker->pos(), tm->pos());
-            x.push_back(player_p.r);
-            x.push_back(player_p.teta);
-        }
-        Polar playerToGoal = make_polar(tm->pos(), rcsc::Vector2D(52.5, 0));
-        x.push_back(playerToGoal.r);
-        x.push_back(playerToGoal.teta);
-    }
-
-
-    // OPP
-    for (int i = 1; i <= 11; i++) {
-        const rcsc::AbstractPlayerObject *tm = state.theirPlayer(i);
-        Polar player_p = make_polar(kicker->pos(), tm->pos());
-        x.push_back(player_p.r);
-        x.push_back(player_p.teta);
-        Polar playerToGoal = make_polar(tm->pos(), rcsc::Vector2D(52.5, 0));
-        x.push_back(playerToGoal.r);
-        x.push_back(playerToGoal.teta);
-    }
-    return vector_ro_matrix(x);
-}
-
-MatrixXd DNN2d::make_input(int kicker_unum,
-                           rcsc::Vector2D *tmpos,
-                           rcsc::Vector2D *opppos,
-                           rcsc::Vector2D ballpos,
-                           rcsc::Vector2D ballvel) {
-    vector<double> x;
-    const rcsc::Vector2D kickerpos = tmpos[kicker_unum - 1];
-
-    // Ball
-    Polar ball_p = make_polar(kickerpos, ballpos);
-    Polar ball_vel = make_polar(rcsc::Vector2D(0, 0), ballvel);
-    x.push_back(ballpos.x);
-    x.push_back(ballpos.y);
-    x.push_back(ball_p.r);
-    x.push_back(ball_p.teta);
-    x.push_back(ball_vel.r);
-    x.push_back(ball_vel.teta);
-
-    // TM
-    for (int i = 1; i <= 11; i++) {
-        if (i == kicker_unum) {
-            x.push_back(tmpos[i - 1].x);
-            x.push_back(tmpos[i - 1].y);
-        } else {
-            Polar player_p = make_polar(kickerpos, tmpos[i - 1]);
-            x.push_back(player_p.r);
-            x.push_back(player_p.teta);
-        }
-        Polar playerToGoal = make_polar(tmpos[i - 1], rcsc::Vector2D(52.5, 0));
-        x.push_back(playerToGoal.r);
-        x.push_back(playerToGoal.teta);
-    }
-
-
-    // OPP
-    for (int i = 1; i <= 11; i++) {
-        Polar player_p = make_polar(kickerpos, opppos[i - 1]);
-        x.push_back(player_p.r);
-        x.push_back(player_p.teta);
-        Polar playerToGoal = make_polar(opppos[i - 1], rcsc::Vector2D(52.5, 0));
-        x.push_back(playerToGoal.r);
-        x.push_back(playerToGoal.teta);
-    }
-    return vector_ro_matrix(x);
-
-}
-
 void DNN2d::display() {
     return;
     cout << "mInput: " << mInput.cols() << ", " << mInput.rows() << endl;
@@ -158,7 +66,7 @@ void DNN2d::display() {
     }
 }
 
-int DNN2d::max_output() {
+std::pair<int, double> DNN2d::max_output() {
     double max = -10000000;
     double index = -1;
     for (int i = 0; i < mOutput.rows(); i++) {
@@ -167,7 +75,7 @@ int DNN2d::max_output() {
             index = i;
         }
     }
-    return index;
+    return std::make_pair(index, max);
 }
 
 const int DNN2d::find_kicker(const rcsc::WorldModel &state) {
@@ -177,10 +85,97 @@ const int DNN2d::find_kicker(const rcsc::WorldModel &state) {
     return tm->unum();
 }
 
-MatrixXd DNN2d::vector_ro_matrix(vector<double> &x) {
+
+
+
+void wm2vector(const rcsc::WorldModel &wm, vector<rcsc::Vector2D> &tm_pos, vector<rcsc::Vector2D> &opp_pos, rcsc::Vector2D &ball_pos, rcsc::Vector2D &ball_vel)
+{
+    for (int i = 1; i <= 11; i++){
+        const rcsc::AbstractPlayerObject * tm = wm.ourPlayer(i);
+        if(tm != nullptr && tm->unum() > 0){
+            tm_pos.push_back(tm->pos());
+        }else{
+            tm_pos.push_back(rcsc::Vector2D(-100,0));
+        }
+    }
+    for (int i = 1; i <= 11; i++){
+        const rcsc::AbstractPlayerObject * tm = wm.theirPlayer(i);
+        if(tm != nullptr && tm->unum() > 0){
+            opp_pos.push_back(tm->pos());
+        }else{
+            opp_pos.push_back(rcsc::Vector2D(-100,0));
+        }
+    }
+    ball_pos = wm.ball().pos();
+    ball_vel = wm.ball().vel();
+}
+
+vector<double> vector2feature(const rcsc::WorldModel& wm, vector<rcsc::Vector2D> &tm_pos, vector<rcsc::Vector2D> &opp_pos, rcsc::Vector2D &ball_pos, rcsc::Vector2D &ball_vel_)
+{
+
+    double min_dist = 1000;
+    int min_dist_i = 0;
+    for (int i = 1; i <= 11; i++){
+        const rcsc::AbstractPlayerObject *kicker = wm.ourPlayer(i);
+        if(kicker != nullptr && kicker->unum() > 0){
+            double dist = kicker->pos().dist(ball_pos);
+            if(dist < min_dist){
+                min_dist = dist;
+                min_dist_i = i;
+            }
+        }
+    }
+
+    int kicker_unum = 0;
+    rcsc::Vector2D kickerpos = wm.ball().pos();
+
+    if(min_dist_i > 0){
+        const rcsc::AbstractPlayerObject *kicker = wm.ourPlayer(min_dist_i);
+        kicker_unum = min_dist_i;
+        kickerpos = kicker->pos();
+    }
+
+    vector<double> res;
+    Polar ball_p = make_polar(kickerpos, ball_pos);
+    Polar ball_vel = make_polar(rcsc::Vector2D(0, 0), ball_vel_);
+    res.push_back(ball_pos.x);
+    res.push_back(ball_pos.y);
+    res.push_back(ball_p.r);
+    res.push_back(ball_p.teta);
+    res.push_back(ball_vel.r);
+    res.push_back(ball_vel.teta);
+    // TM
+    for (int i = 1; i <= 11; i++) {
+        if (i == kicker_unum) {
+            res.push_back(tm_pos[i-1].x);
+            res.push_back(tm_pos[i-1].y);
+        } else {
+            Polar player_p = make_polar(kickerpos, tm_pos[i-1]);
+            res.push_back(player_p.r);
+            res.push_back(player_p.teta);
+        }
+        Polar playerToGoal = make_polar(tm_pos[i-1], rcsc::Vector2D(52.5, 0));
+        res.push_back(playerToGoal.r);
+        res.push_back(playerToGoal.teta);
+    }
+
+
+    // OPP
+    for (int i = 1; i <= 11; i++) {
+        Polar player_p = make_polar(kickerpos, opp_pos[i-1]);
+        res.push_back(player_p.r);
+        res.push_back(player_p.teta);
+        Polar playerToGoal = make_polar(opp_pos[i-1], rcsc::Vector2D(52.5, 0));
+        res.push_back(playerToGoal.r);
+        res.push_back(playerToGoal.teta);
+    }
+
+    return res;
+}
+
+Eigen::MatrixXd vector_to_matrix(vector<double> &x) {
     MatrixXd inp(x.size(), 1);
     for (int i = 0; i < x.size(); i++)
         inp(i, 0) = x[i];
     return inp;
 }
-

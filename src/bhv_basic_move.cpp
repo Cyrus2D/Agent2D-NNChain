@@ -49,80 +49,65 @@
 
 #include "neck_offensive_intercept_neck.h"
 #include "bhv_basic_offensive_kick.h"
-
+#include <vector>
+#include "dnn/DNN2d.h"
 using namespace rcsc;
-
+using namespace std;
 /*-------------------------------------------------------------------*/
 /*!
 
  */
-UnMark::UnMark(const WorldModel &wm, Vector2D _home_pos) {
-    home_pos = _home_pos;
-    target = home_pos;
-    find_best_target(wm);
-}
+bool UnMark::execute(PlayerAgent *agent)
+{
+    const WorldModel & wm = agent->world();
+    Vector2D stra =  Strategy::i().getPosition(wm.self().unum());
+    if(stra.dist(wm.self().pos()) > 10)
+        return false;
+    int self_unum = wm.self().unum();
+    vector<Vector2D> tm_pos;
+    vector<Vector2D> opp_pos;
+    Vector2D ball_pos;
+    Vector2D ball_vel;
+    wm2vector(wm, tm_pos, opp_pos, ball_pos, ball_vel);
 
-void UnMark::find_best_target(const WorldModel &wm) {
-    cout << "####CYCLE: " << wm.time().cycle() << endl;
-    Vector2D tmpos[11], opppos[11], ballpos, ballvel, selfpos;
-    int kicker_unum = wm.getTeammateNearestToBall(10)->unum(),
-            self_unum = wm.self().unum();
-    set_poses(tmpos, opppos, wm);
-    ballpos = wm.ball().pos();
-    ballvel = wm.ball().vel();
-    selfpos = wm.self().pos();
-
-    DNN2d::i("weights.dnn");
-
-    bool finded_pos = false;
-    for (int depth = 0; depth < 2; depth++) {
-        for (double dist = 2; dist <= 10.0; dist += 2.0) {
-            for (double angle = 0; angle < 360.0; angle += 30) {
-                Vector2D new_pos = selfpos + Vector2D::polar2vector(dist, angle);
-                tmpos[self_unum - 1] = new_pos;
-                DNN2d::i()->Calculate(DNN2d::i()->make_input(
-                        kicker_unum,
-                        tmpos,
-                        opppos,
-                        ballpos,
-                        ballvel
-                ));
-                int nn_unum = DNN2d::i()->max_output() + 1;
-                cout << "nn_unum: " << nn_unum << endl;
-                if (nn_unum == self_unum) {
-                    finded_pos = true;
-                    target = new_pos;
-                    break;
+    int receiver_tm = 0;
+    double max_out = -100000;
+    double max_out_self = -100000;
+    Vector2D best_pos = wm.self().pos();
+    int unum_tmp = self_unum - 1;
+    for(double dist = 0; dist <= 4; dist+= 2){
+        for(double angle = 0; angle < 360; angle += 45){
+            Vector2D tar = wm.self().pos() + Vector2D::polar2vector(dist, angle);
+            if(tar.absX() > 52 || tar.absY() > 36 || tar.x > wm.offsideLineX())
+                continue;
+            tm_pos[unum_tmp] = tar;
+            auto features_vec = vector2feature(wm, tm_pos, opp_pos, ball_pos, ball_vel);
+            MatrixXd features_mat = vector_to_matrix(features_vec);
+            DNN2d::i()->Calculate(features_mat);
+            auto out = DNN2d::i()->max_output();
+            int tar_receiver_tm = get<0>(out) + 1;
+            double tar_max_out = get<1>(out);
+            if(tar_receiver_tm == self_unum){
+                if(tar_max_out > max_out_self){
+                    max_out_self = tar_max_out;
+                    best_pos = tar;
+                }
+            }else{
+                if(tar_max_out > max_out){
+                    max_out = tar_max_out;
                 }
             }
-            if (finded_pos) break;
+            if(dist<1)
+                break;
         }
-        if (finded_pos) break;
-        tmpos[self_unum - 1] = selfpos;
-        DNN2d::i()->Calculate(DNN2d::i()->make_input(
-                kicker_unum,
-                tmpos,
-                opppos,
-                ballpos,
-                ballvel
-        ));
-        kicker_unum = DNN2d::i()->max_output() + 1;
     }
-}
 
-void UnMark::set_poses(Vector2D *tmpos, Vector2D *opppos, const WorldModel &wm) {
-    for (int i = 1; i <= 11; i++) {
-        const AbstractPlayerObject *tm = wm.ourPlayer(i);
-        if (tm == NULL || tm->unum() < 1) continue;
-
-        tmpos[i - 1] = tm->pos();
+    if(max_out < max_out_self - 0.1 && max_out_self > 0.5){
+        agent->debugClient().addCircle(best_pos, 1.5);
+        Body_GoToPoint2010(best_pos, 0.1, 100).execute(agent);
+        return true;
     }
-    for (int i = 1; i <= 11; i++) {
-        const AbstractPlayerObject *opp = wm.theirPlayer(i);
-        if (opp == NULL || opp->unum() < 1) continue;
-
-        opppos[i - 1] = opp->pos();
-    }
+    return false;
 }
 
 bool
@@ -155,6 +140,10 @@ Bhv_BasicMove::execute(PlayerAgent *agent) {
         return true;
     }
 
+    if(mate_min <= opp_min){
+//        if(UnMark().execute(agent))
+//            return true;
+    }
     const Vector2D target_point = Strategy::i().getPosition(wm.self().unum());
     const double dash_power = Strategy::get_normal_dash_power(wm);
 

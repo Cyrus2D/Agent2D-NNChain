@@ -77,7 +77,7 @@ private:
     std::vector< ActionStatePair > M_result;
     double M_best_evaluation;
 
-    void calculateResult( const rcsc::WorldModel & wm );
+    void calculateResult( rcsc::PlayerAgent * agent, const rcsc::WorldModel & wm );
 
     void calculateResultChain( const rcsc::WorldModel & wm,
                                unsigned long * n_evaluated );
@@ -90,7 +90,7 @@ private:
                    unsigned long max_chain_length,
                    long max_evaluate_limit );
 
-    void calculateResultBestFirstSearch( const rcsc::WorldModel & wm,
+    void calculateResultBestFirstSearch( rcsc::PlayerAgent * agent, const rcsc::WorldModel & wm,
                                          unsigned long * n_evaluated );
 
     void debugPrintCurrentState( const rcsc::WorldModel & wm );
@@ -108,9 +108,9 @@ public:
                       unsigned long max_chain_length = DEFAULT_MAX_CHAIN_LENGTH,
                       long max_evaluate_limit = DEFAULT_MAX_EVALUATE_LIMIT );
 
-    void calculate( const rcsc::WorldModel & wm )
+    void calculate( rcsc::PlayerAgent * agent, const rcsc::WorldModel & wm )
       {
-          calculateResult( wm );
+          calculateResult( agent, wm );
       }
 
     const std::vector< ActionStatePair > & getAllChain() const

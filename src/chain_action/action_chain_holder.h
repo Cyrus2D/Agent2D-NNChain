@@ -79,7 +79,7 @@ public:
     FieldEvaluator::ConstPtr fieldEvaluator() const;
     ActionGenerator::ConstPtr actionGenerator() const;
 
-    void update( const rcsc::WorldModel & wm );
+    void update( rcsc::PlayerAgent * agent, const rcsc::WorldModel & wm );
 
     const ActionChainGraph & graph() const;
 };

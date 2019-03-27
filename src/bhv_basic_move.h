@@ -48,15 +48,7 @@ private:
 
 class UnMark {
 public:
-    rcsc::Vector2D home_pos;
-    rcsc::Vector2D target;
-
-    UnMark(const rcsc::WorldModel &wm, rcsc::Vector2D _home_pos);
-
-    void find_best_target(const rcsc::WorldModel &wm);
-
-private:
-    void set_poses(rcsc::Vector2D *tmpos, rcsc::Vector2D *opppos, const rcsc::WorldModel &wm);
+    bool execute(rcsc::PlayerAgent * agent);
 };
 
 #endif
