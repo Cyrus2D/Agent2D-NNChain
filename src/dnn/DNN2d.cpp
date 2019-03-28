@@ -110,7 +110,7 @@ void wm2vector(const rcsc::WorldModel &wm, vector<rcsc::Vector2D> &tm_pos, vecto
     ball_vel = wm.ball().vel();
 }
 
-vector<double> vector2feature(const rcsc::WorldModel& wm, vector<rcsc::Vector2D> &tm_pos, vector<rcsc::Vector2D> &opp_pos, rcsc::Vector2D &ball_pos, rcsc::Vector2D &ball_vel_)
+vector<double> vector2feature(const rcsc::WorldModel& wm, vector<rcsc::Vector2D> &tm_pos, vector<rcsc::Vector2D> &opp_pos, rcsc::Vector2D &ball_pos, rcsc::Vector2D &ball_vel_, int kicker_unum_)
 {
 
     double min_dist = 1000;
@@ -129,7 +129,12 @@ vector<double> vector2feature(const rcsc::WorldModel& wm, vector<rcsc::Vector2D>
     int kicker_unum = 0;
     rcsc::Vector2D kickerpos = wm.ball().pos();
 
-    if(min_dist_i > 0){
+    if(kicker_unum_ > 0){
+        const rcsc::AbstractPlayerObject *kicker = wm.ourPlayer(kicker_unum_);
+        kicker_unum = kicker_unum_;
+        kickerpos = kicker->pos();
+    }
+    else if(min_dist_i > 0){
         const rcsc::AbstractPlayerObject *kicker = wm.ourPlayer(min_dist_i);
         kicker_unum = min_dist_i;
         kickerpos = kicker->pos();

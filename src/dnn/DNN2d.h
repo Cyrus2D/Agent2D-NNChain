@@ -26,7 +26,7 @@ public:
 
 Polar make_polar(rcsc::Vector2D start, rcsc::Vector2D endp);
 void wm2vector(const rcsc::WorldModel & wm, vector<rcsc::Vector2D> & tm_pos,vector<rcsc::Vector2D> & opp_pos, rcsc::Vector2D & ball_pos, rcsc::Vector2D & ball_vel);
-vector<double> vector2feature(const rcsc::WorldModel& wm,vector<rcsc::Vector2D> & tm_pos,vector<rcsc::Vector2D> & opp_pos, rcsc::Vector2D & ball_pos, rcsc::Vector2D & ball_vel);
+vector<double> vector2feature(const rcsc::WorldModel& wm,vector<rcsc::Vector2D> & tm_pos,vector<rcsc::Vector2D> & opp_pos, rcsc::Vector2D & ball_pos, rcsc::Vector2D & ball_vel, int kicker_unum = 0);
 
 MatrixXd vector_to_matrix(vector<double> &x);
 class DNN2d : public DeepNueralNetwork {

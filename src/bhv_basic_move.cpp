@@ -61,7 +61,7 @@ bool UnMark::execute(PlayerAgent *agent)
 {
     const WorldModel & wm = agent->world();
     Vector2D stra =  Strategy::i().getPosition(wm.self().unum());
-    if(stra.dist(wm.self().pos()) > 10)
+    if(stra.dist(wm.self().pos()) > 15)
         return false;
     int self_unum = wm.self().unum();
     vector<Vector2D> tm_pos;
@@ -69,13 +69,13 @@ bool UnMark::execute(PlayerAgent *agent)
     Vector2D ball_pos;
     Vector2D ball_vel;
     wm2vector(wm, tm_pos, opp_pos, ball_pos, ball_vel);
-
+    ball_pos = wm.ball().inertiaPoint(wm.interceptTable()->teammateReachCycle());
     int receiver_tm = 0;
     double max_out = -100000;
     double max_out_self = -100000;
     Vector2D best_pos = wm.self().pos();
     int unum_tmp = self_unum - 1;
-    for(double dist = 0; dist <= 4; dist+= 2){
+    for(double dist = 0; dist <= 8; dist+= 2){
         for(double angle = 0; angle < 360; angle += 45){
             Vector2D tar = wm.self().pos() + Vector2D::polar2vector(dist, angle);
             if(tar.absX() > 52 || tar.absY() > 36 || tar.x > wm.offsideLineX())
@@ -106,6 +106,81 @@ bool UnMark::execute(PlayerAgent *agent)
         agent->debugClient().addCircle(best_pos, 1.5);
         Body_GoToPoint2010(best_pos, 0.1, 100).execute(agent);
         return true;
+    }else{
+        agent->debugClient().addMessage("cant");
+        const WorldModel & wm = agent->world();
+        Vector2D stra =  Strategy::i().getPosition(wm.self().unum());
+        if(stra.dist(wm.self().pos()) > 15){
+            agent->debugClient().addMessage("strat");
+            return false;
+        }
+        int self_unum = wm.self().unum();
+        vector<Vector2D> tm_pos;
+        vector<Vector2D> opp_pos;
+        Vector2D ball_pos;
+        Vector2D ball_vel;
+        wm2vector(wm, tm_pos, opp_pos, ball_pos, ball_vel);
+        auto features_vec = vector2feature(wm, tm_pos, opp_pos, ball_pos, ball_vel);
+        MatrixXd features_mat = vector_to_matrix(features_vec);
+        DNN2d::i()->Calculate(features_mat);
+        auto out = DNN2d::i()->max_output();
+        int tar_receiver_tm_ = get<0>(out) + 1;
+        if(tar_receiver_tm_ == self_unum){
+            agent->debugClient().addMessage("me");
+            return false;
+        }
+        const AbstractPlayerObject * tm = wm.ourPlayer(tar_receiver_tm_);
+        if(tm == nullptr || tm->unum() < 1){
+            agent->debugClient().addMessage("null");
+            return false;
+        }
+        agent->debugClient().addMessage("to %d", tar_receiver_tm_);
+        ball_pos = tm->pos() + Vector2D(0.5,0);
+        ball_vel = Vector2D(0,0);
+        {
+            double max_out = -100000;
+            double max_out_self = -100000;
+            Vector2D best_pos = wm.self().pos();
+            int unum_tmp = self_unum - 1;
+            for(double dist = 0; dist <= 8; dist+= 2){
+                for(double angle = 0; angle < 360; angle += 45){
+                    Vector2D tar = wm.self().pos() + Vector2D::polar2vector(dist, angle);
+                    if(tar.absX() > 52 || tar.absY() > 36 || tar.x > wm.offsideLineX())
+                        continue;
+                    tm_pos[unum_tmp] = tar;
+                    auto features_vec = vector2feature(wm, tm_pos, opp_pos, ball_pos, ball_vel, tar_receiver_tm_);
+                    MatrixXd features_mat = vector_to_matrix(features_vec);
+                    DNN2d::i()->Calculate(features_mat);
+                    auto out = DNN2d::i()->max_output();
+                    int tar_receiver_tm = get<0>(out) + 1;
+                    agent->debugClient().addMessage("r%d", tar_receiver_tm);
+                    double tar_max_out = get<1>(out);
+                    if(tar_receiver_tm == tar_receiver_tm_)
+                        continue;
+                    if(tar_receiver_tm == self_unum){
+                        if(tar_max_out > max_out_self){
+                            max_out_self = tar_max_out;
+                            best_pos = tar;
+                        }
+                    }else{
+                        if(tar_max_out > max_out){
+                            max_out = tar_max_out;
+                        }
+                    }
+                    if(dist<1)
+                        break;
+                }
+            }
+
+            if(max_out < max_out_self - 0.1 && max_out_self > 0.5){
+                agent->debugClient().addCircle(best_pos, 1.5);
+                agent->debugClient().addCircle(best_pos, 2);
+                Body_GoToPoint2010(best_pos, 0.1, 100).execute(agent);
+                return true;
+            }
+        }
+
+
     }
     return false;
 }
@@ -129,12 +204,12 @@ Bhv_BasicMove::execute(PlayerAgent *agent) {
     if (!wm.existKickableTeammate()
         && (self_min <= 3
             || (self_min <= mate_min
-                && self_min < opp_min + 3)
+                && self_min < opp_min + 8)
         )
             ) {
         dlog.addText(Logger::TEAM,
                      __FILE__": intercept");
-        Body_Intercept().execute(agent);
+        Body_Intercept(false).execute(agent);
         agent->setNeckAction(new Neck_OffensiveInterceptNeck());
 
         return true;
